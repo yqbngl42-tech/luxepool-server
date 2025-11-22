@@ -28,10 +28,10 @@ app.use(express.urlencoded({ extended: true }));
 // Rate Limiting - Prevent spam
 const limiter = rateLimit({
     windowMs: 60 * 1000, // 1 minute
-    max: 6, // max 6 requests per minute
-    message: { 
-        success: false, 
-        error: 'יותר מדי בקשות. אנא נסה שוב בעוד דקה.' 
+    max: 6,
+    message: {
+        success: false,
+        error: 'יותר מדי בקשות. אנא נסה שוב בעוד דקה.'
     },
     standardHeaders: true,
     legacyHeaders: false,
@@ -47,21 +47,15 @@ const twilioClient = twilio(
 
 // Helper function to format phone number
 const formatPhoneNumber = (phone) => {
-    // Remove all non-digit characters
     let cleaned = phone.replace(/\D/g, '');
-    
-    // If starts with 0, replace with +972
     if (cleaned.startsWith('0')) {
         cleaned = '972' + cleaned.slice(1);
     }
-    
-    // Add + if not present
     if (!cleaned.startsWith('+')) {
         cleaned = '+' + cleaned;
     } else {
         cleaned = '+' + cleaned.replace(/^\+/, '');
     }
-    
     return cleaned;
 };
 
@@ -76,11 +70,10 @@ app.post('/api/send',
     ],
     async (req, res) => {
         try {
-            // Validate input
             const errors = validationResult(req);
             if (!errors.isEmpty()) {
-                return res.status(400).json({ 
-                    success: false, 
+                return res.status(400).json({
+                    success: false,
                     error: 'נתונים לא תקינים',
                     details: errors.array()
                 });
@@ -88,7 +81,6 @@ app.post('/api/send',
 
             const { name, phone, email, service, message } = req.body;
 
-            // Format phone numbers
             const customerPhone = formatPhoneNumber(phone);
             const businessPhone = formatPhoneNumber(process.env.MY_PHONE_NUMBER);
             const partnerWhatsApp = process.env.PARTNER_WHATSAPP;
@@ -98,7 +90,6 @@ app.post('/api/send',
             console.log('💼 Business:', businessPhone);
             console.log('💬 Partner WhatsApp:', partnerWhatsApp);
 
-            // Message texts - Professional & Formal
             const customerMessage = `שלום רב,
 
 תודה על פנייתך ל-LuxePool Projects.
@@ -134,7 +125,6 @@ ${message || 'לא צוינה הודעה'}
 
 ⏰ ${new Date().toLocaleString('he-IL')}`;
 
-            // Send SMS to customer
             const smsToCustomer = await twilioClient.messages.create({
                 body: customerMessage,
                 from: process.env.TWILIO_PHONE_NUMBER,
@@ -142,7 +132,6 @@ ${message || 'לא צוינה הודעה'}
             });
             console.log('✅ SMS to customer sent:', smsToCustomer.sid);
 
-            // Send SMS to business owner
             const smsToBusiness = await twilioClient.messages.create({
                 body: businessMessage,
                 from: process.env.TWILIO_PHONE_NUMBER,
@@ -150,15 +139,13 @@ ${message || 'לא צוינה הודעה'}
             });
             console.log('✅ SMS to business sent:', smsToBusiness.sid);
 
-            // Send WhatsApp to partner - FIXED with WHATSAPP_FROM
             const whatsappToPartner = await twilioClient.messages.create({
                 body: whatsappMessage,
-                from: process.env.WHATSAPP_FROM || 'whatsapp:+14155238886', // Twilio Sandbox or approved number
+                from: process.env.WHATSAPP_FROM || 'whatsapp:+14155238886',
                 to: partnerWhatsApp
             });
             console.log('✅ WhatsApp to partner sent:', whatsappToPartner.sid);
 
-            // Success response
             res.status(200).json({
                 success: true,
                 message: 'ההודעות נשלחו בהצלחה!',
@@ -171,10 +158,9 @@ ${message || 'לא צוינה הודעה'}
 
         } catch (error) {
             console.error('❌ Twilio error:', error.message);
-            
-            // User-friendly error messages
+
             let errorMessage = 'שגיאה בשליחת ההודעות';
-            
+
             if (error.code === 21211) {
                 errorMessage = 'מספר הטלפון אינו תקין. אנא בדוק ונסה שוב.';
             } else if (error.code === 21614) {
@@ -182,7 +168,7 @@ ${message || 'לא צוינה הודעה'}
             } else if (error.code === 20003) {
                 errorMessage = 'שגיאה בחיבור לשירות SMS. אנא נסה שוב מאוחר יותר.';
             }
-            
+
             res.status(500).json({
                 success: false,
                 error: errorMessage,
@@ -194,8 +180,8 @@ ${message || 'לא צוינה הודעה'}
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
-    res.status(200).json({ 
-        status: 'OK', 
+    res.status(200).json({
+        status: 'OK',
         message: 'Server is running',
         timestamp: new Date().toISOString()
     });
@@ -203,22 +189,22 @@ app.get('/api/health', (req, res) => {
 
 // Ping endpoint for monitoring
 app.get('/api/ping', (req, res) => {
-    res.status(200).json({ 
-        success: true, 
+    res.status(200).json({
+        success: true,
         message: 'Server is alive',
         uptime: process.uptime()
     });
 });
 
-// Start server
-app.listen(PORT, () => {
+// Start server and store in variable
+const server = app.listen(PORT, () => {
     console.log(`🚀 Server is running on port ${PORT}`);
     console.log(`📧 Twilio configured: ${process.env.TWILIO_PHONE_NUMBER}`);
     console.log(`📱 Business phone: ${process.env.MY_PHONE_NUMBER}`);
     console.log(`💬 Partner WhatsApp: ${process.env.PARTNER_WHATSAPP}`);
 });
 
-// Handle graceful shutdown
+// Graceful shutdown
 process.on('SIGTERM', () => {
     console.log('SIGTERM signal received: closing HTTP server');
     server.close(() => {
