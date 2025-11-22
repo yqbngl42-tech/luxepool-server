@@ -25,6 +25,7 @@ app.use(cors({
     if (!origin || allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
+      console.warn(`❌ CORS blocked request from origin: ${origin}`);
       callback(new Error('Not allowed by CORS'));
     }
   },
@@ -150,7 +151,7 @@ ${message || 'לא צוינה הודעה'}
 
       const whatsappToPartner = await twilioClient.messages.create({
         body: whatsappMessage,
-        from: process.env.WHATSAPP_FROM || 'whatsapp:+14155238886',
+        from: process.env.WHATSAPP_FROM || 'whatsapp:+14788186590',
         to: partnerWhatsApp
       });
 
