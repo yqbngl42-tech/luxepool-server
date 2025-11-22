@@ -27,7 +27,7 @@ app.use(express.urlencoded({ extended: true }));
 
 // Rate Limiting - Prevent spam
 const limiter = rateLimit({
-    windowMs: 60 * 1000, // 1 minute
+    windowMs: 60 * 1000,
     max: 6,
     message: {
         success: false,
@@ -194,6 +194,11 @@ app.get('/api/ping', (req, res) => {
         message: 'Server is alive',
         uptime: process.uptime()
     });
+});
+
+// Root route for /
+app.get('/', (req, res) => {
+    res.send('🌊 LuxePool Server is running!');
 });
 
 // Start server and store in variable
