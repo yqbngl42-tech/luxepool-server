@@ -11,6 +11,9 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 5000;
 
+// ✅ מוסיפים את השורה הזו מיד אחרי יצירת האפליקציה
+app.set('trust proxy', 1);
+
 // Security Middleware - Helmet
 app.use(helmet());
 
