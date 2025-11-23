@@ -62,6 +62,10 @@ const twilioClient = twilio(
   process.env.TWILIO_AUTH_TOKEN
 );
 
+// 🔍 בדיקת טעינת משתני סביבה
+console.log("🔐 SID:", process.env.TWILIO_ACCOUNT_SID);
+console.log("🔐 TOKEN:", process.env.TWILIO_AUTH_TOKEN ? "Loaded" : "Missing");
+
 // Helper function to format phone number
 const formatPhoneNumber = (phone) => {
   let cleaned = phone.replace(/\D/g, '');
