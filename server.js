@@ -11,7 +11,7 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// ✅ מוסיפים את השורה הזו מיד אחרי יצירת האפליקציה
+// ✅ מאפשר ל־Express לזהות IP אמיתי מאחורי פרוקסי (כמו Render)
 app.set('trust proxy', 1);
 
 // Security Middleware - Helmet
@@ -76,7 +76,7 @@ const formatPhoneNumber = (phone) => {
   return cleaned;
 };
 
-// API Route - Send Messages with Validation
+// API Route - Send Messages with Validation and Logs
 app.post('/api/send',
   [
     body('name').notEmpty().trim().withMessage('שם הוא שדה חובה'),
@@ -86,9 +86,13 @@ app.post('/api/send',
     body('service').optional().trim()
   ],
   async (req, res) => {
+    console.log("📨 בקשה חדשה ל־/api/send התקבלה");
+    console.log("📦 תוכן הבקשה:", req.body);
+
     try {
       const errors = validationResult(req);
       if (!errors.isEmpty()) {
+        console.warn("⚠️ שגיאות ולידציה:", errors.array());
         return res.status(400).json({
           success: false,
           error: 'נתונים לא תקינים',
@@ -102,10 +106,9 @@ app.post('/api/send',
       const businessPhone = formatPhoneNumber(process.env.MY_PHONE_NUMBER);
       const partnerWhatsApp = process.env.PARTNER_WHATSAPP;
 
-      console.log('📨 Sending messages...');
-      console.log('👤 Customer:', customerPhone);
-      console.log('💼 Business:', businessPhone);
-      console.log('💬 Partner WhatsApp:', partnerWhatsApp);
+      console.log("📞 טלפון לקוח (מעובד):", customerPhone);
+      console.log("🏢 טלפון עסק (מעובד):", businessPhone);
+      console.log("💬 WhatsApp שותף:", partnerWhatsApp);
 
       const customerMessage = `שלום רב,
 
@@ -142,23 +145,36 @@ ${message || 'לא צוינה הודעה'}
 
 ⏰ ${new Date().toLocaleString('he-IL')}`;
 
+      console.log("✉️ תוכן הודעת SMS ללקוח:", customerMessage);
+      console.log("✉️ תוכן הודעת SMS לעסק:", businessMessage);
+      console.log("✉️ תוכן הודעת WhatsApp לשותף:", whatsappMessage);
+
+      // שליחת SMS ללקוח
+      console.log("📤 שולח SMS ללקוח...");
       const smsToCustomer = await twilioClient.messages.create({
         body: customerMessage,
         from: process.env.TWILIO_PHONE_NUMBER,
         to: customerPhone
       });
+      console.log("✅ נשלח SMS ללקוח. SID:", smsToCustomer.sid);
 
+      // שליחת SMS לעסק
+      console.log("📤 שולח SMS לעסק...");
       const smsToBusiness = await twilioClient.messages.create({
         body: businessMessage,
         from: process.env.TWILIO_PHONE_NUMBER,
         to: businessPhone
       });
+      console.log("✅ נשלח SMS לעסק. SID:", smsToBusiness.sid);
 
+      // שליחת WhatsApp לשותף
+      console.log("📤 שולח WhatsApp לשותף...");
       const whatsappToPartner = await twilioClient.messages.create({
         body: whatsappMessage,
         from: process.env.WHATSAPP_FROM || 'whatsapp:+14788186590',
         to: partnerWhatsApp
       });
+      console.log("✅ נשלח WhatsApp לשותף. SID:", whatsappToPartner.sid);
 
       res.status(200).json({
         success: true,
@@ -171,7 +187,9 @@ ${message || 'לא צוינה הודעה'}
       });
 
     } catch (error) {
-      console.error('❌ Twilio error:', error.message);
+      console.error('❌ שגיאה בשליחה דרך Twilio:', error.message);
+      console.error('🔢 קוד שגיאה:', error.code);
+      console.error('🧵 Stack:', error.stack);
 
       let errorMessage = 'שגיאה בשליחת ההודעות';
 
@@ -180,7 +198,7 @@ ${message || 'לא צוינה הודעה'}
       } else if (error.code === 21614) {
         errorMessage = 'מספר הטלפון אינו יכול לקבל SMS. אנא נסה מספר אחר.';
       } else if (error.code === 20003) {
-        errorMessage = 'שגיאה בחיבור לשירות SMS. אנא נסה שוב מאוחר יותר.';
+        errorMessage = 'שגיאה באימות מול Twilio. בדוק את SID וה־Token שלך.';
       }
 
       res.status(500).json({
