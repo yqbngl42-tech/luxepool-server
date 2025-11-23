@@ -171,14 +171,14 @@ ${message || 'לא צוינה הודעה'}
       });
       console.log("✅ נשלח SMS לעסק. SID:", smsToBusiness.sid);
 
-      // שליחת WhatsApp לשותף
+     // שליחת WhatsApp לשותף
 console.log("📤 שולח WhatsApp לשותף...");
 console.log("📨 תוכן הודעת WhatsApp בתבנית:", {
-  '{{1}}': name,
-  '{{2}}': phone,
-  '{{3}}': email || 'לא צוין',
-  '{{4}}': service || 'לא צוין',
-  '{{5}}': message || 'לא צוינה הודעה'
+  '1': name,
+  '2': phone,
+  '3': email || 'לא צוין',
+  '4': service || 'לא צוין',
+  '5': message || 'לא צוינה הודעה'
 });
 
 const whatsappToPartner = await twilioClient.messages.create({
@@ -186,14 +186,15 @@ const whatsappToPartner = await twilioClient.messages.create({
   to: partnerWhatsApp,
   contentSid: 'HXbdd1aad7d75c015ae7f71ca80ede3fec',
   contentVariables: JSON.stringify({
-    '{{1}}': name,
-    '{{2}}': phone,
-    '{{3}}': email || 'לא צוין',
-    '{{4}}': service || 'לא צוין',
-    '{{5}}': message || 'לא צוינה הודעה'
+    '1': name,
+    '2': phone,
+    '3': email || 'לא צוין',
+    '4': service || 'לא צוין',
+    '5': message || 'לא צוינה הודעה'
   })
 });
-      console.log("✅ נשלח WhatsApp לשותף. SID:", whatsappToPartner.sid);
+
+console.log("✅ נשלח WhatsApp לשותף. SID:", whatsappToPartner.sid);
 
       res.status(200).json({
         success: true,
