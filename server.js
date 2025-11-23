@@ -16,8 +16,10 @@ app.use(helmet());
 
 // CORS - מאפשר גם ל-Netlify וגם ל-localhost
 const allowedOrigins = [
+  'http://localhost:5173',
   'https://deluxepools.netlify.app',
-  'http://localhost:5173'
+  'https://deluxepools.pro',
+  'https://www.deluxepools.pro'
 ];
 
 app.use(cors({
